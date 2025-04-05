@@ -1,0 +1,88 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Tests
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+.tox/
+nosetests.xml
+*.cover
+.hypothesis/
+
+# Poetry
+poetry.lock
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.spyderproject
+.spyproject
+.ropeproject
+.pyre/
+.mypy_cache/
+
+# Environment files (only keep example files in git)
+.env
+.env.local
+.env.docker
+.env.production
+!.env.example
+
+# Docker
+.docker/
+.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+postgres-data/
+
+# Alembic migration temp files
+migrations/versions/__pycache__/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Package directories
+node_modules/
+
+# Specific to this project
+pulse_flow_debug.log
+app_debug.log 
