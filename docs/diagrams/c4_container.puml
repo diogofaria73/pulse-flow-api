@@ -1,0 +1,25 @@
+@startuml C4 Container Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Pulse Flow API - Container Diagram
+
+Person(user, "Healthcare Professional", "A healthcare professional that needs to track and manage hospital errors")
+
+System_Boundary(pulseFlowSystem, "Pulse Flow System") {
+    Container(webApp, "Web Application", "JavaScript, React", "Provides the user interface for hospital error tracking")
+    Container(apiApp, "API Application", "Python, FastAPI", "Provides error tracking functionality via a REST API")
+    ContainerDb(database, "Database", "PostgreSQL", "Stores user data, error reports, and system configurations")
+}
+
+System_Ext(notificationSystem, "Notification System", "Sends alerts and notifications to users")
+System_Ext(authSystem, "Authentication System", "Handles user authentication")
+
+Rel(user, webApp, "Uses", "HTTPS")
+Rel(webApp, apiApp, "Makes API calls to", "JSON/HTTPS")
+Rel(apiApp, database, "Reads from and writes to", "SQL")
+Rel(apiApp, notificationSystem, "Sends notifications", "API")
+Rel(apiApp, authSystem, "Authenticates users", "OAuth/JWT")
+
+@enduml 

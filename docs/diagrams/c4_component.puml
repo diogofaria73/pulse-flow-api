@@ -1,0 +1,36 @@
+@startuml C4 Component Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+LAYOUT_WITH_LEGEND()
+
+title Pulse Flow API - Component Diagram
+
+Container_Boundary(api, "API Application") {
+    Component(apiGateway, "API Gateway", "FastAPI", "Handles HTTP requests and routes them to the appropriate components")
+    Component(userComponent, "User Component", "Python", "Handles user-related operations")
+    Component(errorComponent, "Error Tracking Component", "Python", "Manages hospital error tracking functionality")
+    Component(reportComponent, "Reporting Component", "Python", "Generates reports and analytics")
+    Component(authComponent, "Authentication Component", "Python", "Manages user authentication and authorization")
+    Component(notificationComponent, "Notification Component", "Python", "Manages notifications and alerts")
+}
+
+ContainerDb(database, "Database", "PostgreSQL", "Stores all system data")
+
+System_Ext(notificationSystem, "External Notification System", "Sends alerts and notifications to users")
+System_Ext(authSystem, "External Authentication System", "Handles user authentication")
+
+Rel(apiGateway, userComponent, "Routes user requests to")
+Rel(apiGateway, errorComponent, "Routes error tracking requests to")
+Rel(apiGateway, reportComponent, "Routes reporting requests to")
+Rel(apiGateway, authComponent, "Routes auth requests to")
+Rel(apiGateway, notificationComponent, "Routes notification requests to")
+
+Rel(userComponent, database, "Reads from and writes to")
+Rel(errorComponent, database, "Reads from and writes to")
+Rel(reportComponent, database, "Reads from")
+Rel(authComponent, database, "Reads from and writes to")
+
+Rel(authComponent, authSystem, "Authenticates users with")
+Rel(notificationComponent, notificationSystem, "Sends notifications via")
+
+@enduml 

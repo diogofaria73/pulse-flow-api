@@ -1,0 +1,28 @@
+@startuml Data Flow Diagram
+!theme plain
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+title Pulse Flow API - Data Flow Diagram
+
+actor "User" as user
+participant "Frontend" as frontend
+participant "FastAPI" as api
+participant "Services" as services
+participant "Repositories" as repos
+database "Database" as db
+
+user -> frontend: Request
+frontend -> api: HTTP Request
+api -> services: Process Request
+services -> repos: Data Operations
+repos -> db: Query/Update
+db -> repos: Results
+repos -> services: Data
+services -> api: Response
+api -> frontend: HTTP Response
+frontend -> user: UI Update
+
+@enduml 
