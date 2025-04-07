@@ -2,10 +2,10 @@ from typing import List, Optional
 
 from sqlalchemy.orm import Session
 
+from app.core.security import get_password_hash, verify_password
 from app.models.user import User
 from app.repositories.user import user_repository
 from app.schemas.user import UserCreate, UserSearch, UserUpdate
-from app.core.security import get_password_hash, verify_password
 
 
 class UserService:
@@ -14,60 +14,65 @@ class UserService:
         db_user = user_repository.get_by_email(db, email=user_in.email)
         if db_user:
             raise ValueError(f"Email {user_in.email} already registered")
-        
+
         # Hash the password
         hashed_password = get_password_hash(user_in.password)
         user_data = user_in.model_dump()
         user_data["password"] = hashed_password
-        
+
         # Create new user
         return user_repository.create(db, obj_in=UserCreate(**user_data))
-    
+
     def get_user(self, db: Session, user_id: int) -> Optional[User]:
         return user_repository.get(db, id=user_id)
-    
+
     def get_user_by_email(self, db: Session, email: str) -> Optional[User]:
         return user_repository.get_by_email(db, email=email)
-    
-    def authenticate_user(self, db: Session, email: str, password: str) -> Optional[User]:
+
+    def authenticate_user(
+        self, db: Session, email: str, password: str
+    ) -> Optional[User]:
         user = self.get_user_by_email(db, email=email)
         if not user:
             return None
         if not verify_password(password, user.password):
             return None
         return user
-    
+
     def get_all_users(self, db: Session) -> List[User]:
         return user_repository.get_all(db)
-    
+
     def get_active_users(self, db: Session) -> List[User]:
         return user_repository.get_active_users(db)
-    
+
     def get_inactive_users(self, db: Session) -> List[User]:
         return user_repository.get_inactive_users(db)
-    
-    def update_user(self, db: Session, user_id: int, user_in: UserUpdate) -> Optional[User]:
+
+    def update_user(
+        self, db: Session, user_id: int, user_in: UserUpdate
+    ) -> Optional[User]:
         user = user_repository.get(db, id=user_id)
         if not user:
             return None
-        
+
         # Hash password if provided
         update_data = user_in.model_dump(exclude_unset=True)
         if "password" in update_data and update_data["password"]:
             update_data["password"] = get_password_hash(update_data["password"])
-        
+
         return user_repository.update(db, db_obj=user, obj_in=update_data)
-    
+
     def search_users(self, db: Session, search_params: UserSearch) -> List[User]:
         return user_repository.search_users(
-            db, 
-            id=search_params.id,
-            name=search_params.name,
-            email=search_params.email
+            db, id=search_params.id, name=search_params.name, email=search_params.email
         )
-    
-    def activate_deactivate_user(self, db: Session, user_id: int, is_active: bool) -> Optional[User]:
-        return user_repository.activate_deactivate(db, user_id=user_id, is_active=is_active)
+
+    def activate_deactivate_user(
+        self, db: Session, user_id: int, is_active: bool
+    ) -> Optional[User]:
+        return user_repository.activate_deactivate(
+            db, user_id=user_id, is_active=is_active
+        )
 
 
 user_service = UserService()

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.db.session import get_db
-from app.schemas.auth import Token, LoginRequest
+from app.schemas.auth import LoginRequest, Token
 from app.schemas.user import UserCreate, UserResponse
 from app.services.user import user_service
 
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.post("/login", response_model=Token)
 def login_access_token(
     db: Annotated[Session, Depends(get_db)],
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests.
@@ -32,9 +32,9 @@ def login_access_token(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     return Token(
         access_token=create_access_token(
             data={"sub": user.id}, expires_delta=access_token_expires
@@ -60,9 +60,9 @@ def login_access_token_json(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     return Token(
         access_token=create_access_token(
             data={"sub": user.id}, expires_delta=access_token_expires
@@ -71,7 +71,9 @@ def login_access_token_json(
     )
 
 
-@router.post("/test-user", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/test-user", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
 def create_test_user(
     db: Annotated[Session, Depends(get_db)],
 ) -> UserResponse:
@@ -84,7 +86,7 @@ def create_test_user(
             name="Test User",
             email="test@example.com",
             password="password123",
-            is_active=True
+            is_active=True,
         )
         user = user_service.create_user(db, user_data)
         return user
@@ -96,4 +98,4 @@ def create_test_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        ) 
+        )

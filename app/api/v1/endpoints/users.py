@@ -1,4 +1,4 @@
-from typing import List, Annotated
+from typing import Annotated, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -28,6 +28,7 @@ def create_user(
             detail=str(e),
         )
 
+
 @router.get("/all", response_model=List[UserResponse])
 def get_all_users(
     db: Session = Depends(get_db),
@@ -42,6 +43,7 @@ def get_all_users(
         )
     return users
 
+
 @router.get("/{user_id}", response_model=UserResponse)
 def get_user(
     user_id: int,
@@ -55,6 +57,7 @@ def get_user(
             detail=f"User with ID {user_id} not found",
         )
     return user
+
 
 @router.put("/{user_id}", response_model=UserResponse)
 def update_user(
@@ -72,6 +75,7 @@ def update_user(
         )
     return user
 
+
 @router.post("/search", response_model=List[UserResponse])
 def search_users(
     search_params: UserSearch,
@@ -81,6 +85,7 @@ def search_users(
     """Search for users by ID, name, or email."""
     users = user_service.search_users(db, search_params)
     return users
+
 
 @router.patch("/{user_id}/activate", response_model=UserResponse)
 def activate_user(
@@ -97,6 +102,7 @@ def activate_user(
         )
     return user
 
+
 @router.patch("/{user_id}/deactivate", response_model=UserResponse)
 def deactivate_user(
     user_id: int,
@@ -111,4 +117,3 @@ def deactivate_user(
             detail=f"User with ID {user_id} not found",
         )
     return user
-
