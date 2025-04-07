@@ -27,8 +27,9 @@ pulse-flow-api/
 ├── docs/
 │   └── diagrams/         # PlantUML diagrams
 ├── tests/                # Unit and integration tests
-├── .env                  # Environment variables for local dev
-├── .env.docker           # Environment variables for docker environment
+├── .env.example          # Environment variables template
+├── .env.dev              # Environment variables for development
+├── .env.staging          # Environment variables for staging
 ├── .env.production       # Environment variables for production
 ├── Dockerfile            # Docker image definition
 ├── docker-compose.yml    # Docker compose configuration
@@ -36,310 +37,125 @@ pulse-flow-api/
 └── README.md             # Project documentation
 ```
 
-## Ambientes de Execução
+## Execution Environments
 
-A API suporta quatro ambientes de execução diferentes, com detecção automática:
+The API supports three distinct execution environments:
 
-1. **Local** - Execução da API diretamente na máquina local, conectando-se ao PostgreSQL que roda no Docker
-2. **Dev** - Execução da API diretamente na máquina local, usando configurações de desenvolvimento
-3. **Docker** - Execução completa em contêineres Docker
-4. **Production** - Ambiente de produção em contêineres Docker
+1. **Development** - For local development and testing
+   - API runs on port 8000
+   - Database runs on port 5432
+   - Automatic code reloading enabled
+   - Debug mode enabled
 
-### Detecção Automática de Ambiente
+2. **Staging** - For pre-production testing
+   - API runs on port 8001
+   - Database runs on port 5433
+   - Debug mode disabled
+   - Production-like settings
 
-A API detecta automaticamente o ambiente onde está sendo executada e aplica as configurações corretas:
+3. **Production** - For live deployment
+   - API runs on port 8002
+   - Database runs on port 5434
+   - Debug mode disabled
+   - Optimized for performance
 
-- Se a variável de ambiente `ENVIRONMENT` estiver definida, ela será usada
-- Se a aplicação estiver rodando dentro de um contêiner Docker, usa o ambiente Docker
-- Caso contrário, usa o ambiente Local
+### Environment Detection
 
-### Arquivos de Configuração por Ambiente
+The API automatically detects the environment where it's running and applies the correct settings based on the `ENVIRONMENT` variable in the respective `.env` file.
 
-Cada ambiente tem seu próprio arquivo de configuração:
-
-- `.env.local` - Configurações para desenvolvimento local (API local, BD no Docker)
-- `.env` - Configurações para desenvolvimento (API local, BD no Docker)
-- `.env.docker` - Configurações para o ambiente Docker (API e BD no Docker)
-- `.env.production` - Configurações para o ambiente de produção
-
-Você também pode forçar o uso de um arquivo específico definindo a variável `ENV_FILE`:
-
-```bash
-ENV_FILE=.env.local poetry run uvicorn app.main:app --reload
-```
-
-## Quick Start with Make
-
-The project includes a Makefile with common commands for development:
-
-```bash
-# Start development environment (local Python with Docker database)
-make dev
-
-# Start development environment (all components in Docker)
-make dev-docker
-
-# Start Docker environment
-make docker
-
-# Start production environment
-make prod
-
-# Run database migrations
-make migrate-dev
-make migrate-docker
-make migrate-prod
-
-# Generate a new migration
-make generate-migration
-
-# Reset databases (use with caution!)
-make reset-dev
-make reset-docker
-make reset-prod
-
-# Code quality
-make lint
-make format
-
-# Run tests
-make test
-
-# Generate PlantUML diagrams
-make diagrams
-
-# Check if PlantUML is installed
-make check-plantuml
-
-# Para execução local (API local, banco no Docker)
-make local
-
-# Para execução em desenvolvimento (API local, banco no Docker)
-make dev
-```
-
-## Setup and Running the API
+## Getting Started
 
 ### Prerequisites
 
+- Python 3.9+
+- Poetry
 - Docker and Docker Compose
-- Python 3.8 or higher (for local development without Docker)
-- Poetry (for local development without Docker)
+- PostgreSQL (for local development)
 
-### Development Environment
+### Installation
 
-There are three environments available:
-
-1. **Development (dev)**: For local development with a PostgreSQL container
-2. **Docker (compiled)**: Running the API in a Docker container
-3. **Production**: Production-ready environment
-
-### Running the Development Environment
-
-To start the development database:
-
+1. Clone the repository:
 ```bash
+git clone https://github.com/yourusername/pulse-flow-api.git
 cd pulse-flow-api
-docker-compose up -p pulse-flow-api db_dev
 ```
 
-For local development (outside Docker):
-
-1. Install dependencies with Poetry:
+2. Install dependencies:
 ```bash
-cd pulse-flow-api
 poetry install
 ```
 
-2. Run the application:
+3. Copy the environment template:
 ```bash
-poetry run uvicorn app.main:app --reload
+cp .env.example .env.dev  # For development
+cp .env.example .env.staging  # For staging
+cp .env.example .env.production  # For production
 ```
 
-Or use the Docker development environment:
+4. Update the environment variables in each `.env` file as needed.
+
+### Running the Application
+
+#### Full Environment (API + Database)
 
 ```bash
-docker-compose -p pulse-flow-api up api_dev
+make dev      # For development
+make staging  # For staging
+make prod     # For production
 ```
 
-### Running the Docker Environment (Compiled)
+#### Infrastructure Only (Database)
 
-This runs the API in a Docker container with its own database:
+If you only need the database infrastructure:
 
 ```bash
-docker-compose -p pulse-flow-api up api_docker db_docker
+make infra-dev      # Start development database
+make infra-staging  # Start staging database
+make infra-prod     # Start production database
 ```
 
-### Running the Production Environment
+The databases will be available on the following ports:
+- Development: 5432
+- Staging: 5433
+- Production: 5434
 
-This runs the production-ready version in Docker:
+### Database Migrations
+
+To run migrations in each environment:
 
 ```bash
-docker-compose -p pulse-flow-api up api_production db_production
+make migrate-dev      # For development
+make migrate-staging  # For staging
+make migrate-prod     # For production
 ```
 
-## Database Migrations
-
-Database migrations are managed with Alembic. Here are the most common commands:
-
-### Initialize the Database
-
+To generate a new migration:
 ```bash
-# Generate initial migration
-poetry run alembic revision --autogenerate -m "Initial migration"
-
-# Apply migrations
-poetry run alembic upgrade head
+make generate-migration
 ```
 
-### Making Changes to the Database
+### Development Tools
 
-1. Modify the SQLAlchemy models in `app/models/`
-2. Generate a new migration:
-```bash
-poetry run alembic revision --autogenerate -m "Description of the changes"
-```
-3. Apply the migration:
-```bash
-poetry run alembic upgrade head
-```
-
-### Rolling Back Migrations
-
-To roll back to a previous migration:
-```bash
-# Roll back one step
-poetry run alembic downgrade -1
-
-# Roll back to a specific revision
-poetry run alembic downgrade <revision_id>
-
-# Roll back to the beginning (before any migrations)
-poetry run alembic downgrade base
-```
-
-## PlantUML Diagrams
-
-The project uses PlantUML for creating documentation diagrams. The diagrams are located in the `docs/diagrams/` directory.
-
-### Prerequisites
-
-To render the diagrams, you need:
-
-1. Java Runtime Environment (JRE)
-2. GraphViz
-3. PlantUML
-
-Install on macOS:
-
-```bash
-brew install --cask temurin
-brew install graphviz
-brew install plantuml
-```
-
-Install on Linux:
-
-```bash
-sudo apt-get install default-jre graphviz plantuml
-```
-
-### Generating Diagrams
-
-You can generate all diagrams at once:
-
-```bash
-make diagrams
-```
-
-Or use the script directly:
-
-```bash
-./scripts/generate_diagrams.sh
-```
-
-### Available Diagrams
-
-- `architecture.puml` - System architecture diagram
-- `data_flow.puml` - Data flow sequence diagram
-
-For more details about PlantUML usage in this project, see the dedicated documentation in `docs/diagrams/README.md`.
-
-## API Endpoints
-
-### User Management
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/users` | Create a new user |
-| GET | `/api/v1/users/{user_id}` | Get user by ID |
-| PUT | `/api/v1/users/{user_id}` | Update user |
-| POST | `/api/v1/users/search` | Search for users by ID, name, or email |
-| PATCH | `/api/v1/users/{user_id}/activate` | Activate a user |
-| PATCH | `/api/v1/users/{user_id}/deactivate` | Deactivate a user |
-
-## Development
-
-### Adding New Models
-
-1. Create a new model in `app/models/`
-2. Add the model to `app/db/base.py`
-3. Create corresponding Pydantic schemas in `app/schemas/`
-4. Create a repository in `app/repositories/`
-5. Create a service in `app/services/`
-6. Create API endpoints in `app/api/v1/endpoints/`
-7. Register the API router in `app/api/v1/__init__.py`
+- Run tests: `make test`
+- Format code: `make format`
+- Run linter: `make lint`
+- Generate diagrams: `make diagrams`
 
 ## API Documentation
 
-Once the API is running, you can access the auto-generated documentation:
+Once the application is running, you can access the API documentation at:
+- Development: http://localhost:8000/docs
+- Staging: http://localhost:8001/docs
+- Production: http://localhost:8002/docs
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+## Contributing
 
-## Environment Variables
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-The following environment variables can be set:
+## License
 
-- `PROJECT_NAME`: API project name
-- `API_V1_STR`: API version 1 prefix
-- `POSTGRES_SERVER`: PostgreSQL server host
-- `POSTGRES_USER`: PostgreSQL username
-- `POSTGRES_PASSWORD`: PostgreSQL password
-- `POSTGRES_DB`: PostgreSQL database name
-- `POSTGRES_PORT`: PostgreSQL port
-
-## Troubleshooting
-
-### Common Issues
-
-#### ModuleNotFoundError: No module named 'pydantic_settings'
-
-If you encounter this error, it means the pydantic-settings package is missing. Make sure you're using the latest version of the code which includes this dependency in pyproject.toml. Run:
-
-```bash
-poetry install
-```
-
-#### Database Connection Issues
-
-If you have problems connecting to the database, check:
-
-1. Database is running and accessible
-2. Environment variables are correctly set in the appropriate .env file
-3. Network connectivity between containers if using Docker
-
-#### Migrations Failing
-
-If database migrations fail:
-
-1. Check database connection settings
-2. Ensure the database exists and is accessible
-3. Check that alembic is properly installed:
-   ```bash
-   poetry add alembic
-   ```
-4. Run migrations manually:
-   ```bash
-   poetry run alembic upgrade head
-   ```
+This project is licensed under the MIT License - see the LICENSE file for details.

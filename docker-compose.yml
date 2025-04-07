@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # PostgreSQL service for development
+  # Development environment
   db_dev:
     image: postgres:14
     container_name: pulse_flow_db_dev
@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: pulse_flow_db
     ports:
-      - "5435:5432"
+      - "5432:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     networks:
@@ -22,19 +22,35 @@ services:
       timeout: 5s
       retries: 5
 
-  # PostgreSQL service for docker environment
-  db_docker:
+  api_dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pulse_flow_api_dev
+    restart: always
+    environment:
+      - ENV_FILE=.env.dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      db_dev:
+        condition: service_healthy
+    networks:
+      - pulse_flow_network
+
+  # Staging environment
+  db_staging:
     image: postgres:14
-    container_name: pulse_flow_db_docker
+    container_name: pulse_flow_db_staging
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: pulse_flow_db_docker
+      POSTGRES_DB: pulse_flow_db_staging
     ports:
       - "5433:5432"
     volumes:
-      - postgres_data_docker:/var/lib/postgresql/data
+      - postgres_data_staging:/var/lib/postgresql/data
     networks:
       - pulse_flow_network
     healthcheck:
@@ -43,7 +59,23 @@ services:
       timeout: 5s
       retries: 5
 
-  # PostgreSQL service for production environment
+  api_staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pulse_flow_api_staging
+    restart: always
+    environment:
+      - ENV_FILE=.env.staging
+    ports:
+      - "8001:8000"
+    depends_on:
+      db_staging:
+        condition: service_healthy
+    networks:
+      - pulse_flow_network
+
+  # Production environment
   db_production:
     image: postgres:14
     container_name: pulse_flow_db_production
@@ -64,58 +96,27 @@ services:
       timeout: 5s
       retries: 5
 
-  # API service for local development
-  api_dev:
+  api_production:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: pulse_flow_api_dev
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - .:/app
-    ports:
-      - "8005:8000"
-    env_file:
-      - .env
-    depends_on:
-      db_dev:
-        condition: service_healthy
-    networks:
-      - pulse_flow_network
-
-  # API service for docker environment
-  api_docker:
-    build: .
-    container_name: pulse_flow_api_docker
-    ports:
-      - "8001:8000"
-    env_file:
-      - .env.docker
-    depends_on:
-      db_docker:
-        condition: service_healthy
-    networks:
-      - pulse_flow_network
-
-  # API service for production environment
-  api_production:
-    build: .
     container_name: pulse_flow_api_production
+    restart: always
+    environment:
+      - ENV_FILE=.env.production
     ports:
       - "8002:8000"
-    env_file:
-      - .env.production
     depends_on:
       db_production:
         condition: service_healthy
     networks:
       - pulse_flow_network
 
-volumes:
-  postgres_data_dev:
-  postgres_data_docker:
-  postgres_data_production:
-
 networks:
   pulse_flow_network:
     driver: bridge
+
+volumes:
+  postgres_data_dev:
+  postgres_data_staging:
+  postgres_data_production:

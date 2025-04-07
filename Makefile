@@ -1,37 +1,42 @@
-.PHONY: dev local docker prod migrate-dev migrate-docker migrate-prod migrate-local reset-dev reset-docker reset-prod reset-local lint format test diagrams
+.PHONY: dev staging prod migrate-dev migrate-staging migrate-prod reset-dev reset-staging reset-prod lint format test diagrams infra-dev infra-staging infra-prod local
 
-# Development environment (only db in Docker)
-local:
-	docker-compose -p pulse-flow-api up db_dev -d
-	@echo "Starting local development server..."
-	ENV_FILE=.env.local poetry run uvicorn app.main:app --reload --port 8001
-
-# Development environment (all in Docker)
+# Development environment
 dev:
-	docker-compose -p pulse-flow-api up db_dev -d
-	@echo "Starting development server..."
-	ENV_FILE=.env poetry run uvicorn app.main:app --reload --port 8002
+	docker-compose -p pulse-flow-api up db_dev api_dev
 
-dev-docker:
-	docker-compose -p pulse-flow-api up api_dev
-
-# Docker environment
-docker:
-	docker-compose -p pulse-flow-api up api_docker db_docker
+# Staging environment
+staging:
+	docker-compose -p pulse-flow-api up db_staging api_staging
 
 # Production environment
 prod:
-	docker-compose -p pulse-flow-api up api_production db_production
+	docker-compose -p pulse-flow-api up db_production api_production
+
+# Local development (API local + DB in Docker)
+local:
+	docker-compose -p pulse-flow-api up -d db_dev
+	@echo "Starting local development server..."
+	ENV_FILE=.env.dev poetry run uvicorn app.main:app --reload --port 8000
+
+# Infrastructure only (database)
+infra-dev:
+	docker-compose -p pulse-flow-api up -d db_dev
+	@echo "Development database is running on port 5432"
+
+infra-staging:
+	docker-compose -p pulse-flow-api up -d db_staging
+	@echo "Staging database is running on port 5433"
+
+infra-prod:
+	docker-compose -p pulse-flow-api up -d db_production
+	@echo "Production database is running on port 5434"
 
 # Database migrations
-migrate-local:
-	ENV_FILE=.env.local poetry run alembic upgrade head
-
 migrate-dev:
-	ENV_FILE=.env poetry run alembic upgrade head
+	ENV_FILE=.env.dev poetry run alembic upgrade head
 
-migrate-docker:
-	ENV_FILE=.env.docker poetry run alembic upgrade head
+migrate-staging:
+	ENV_FILE=.env.staging poetry run alembic upgrade head
 
 migrate-prod:
 	ENV_FILE=.env.production poetry run alembic upgrade head
@@ -42,37 +47,20 @@ generate-migration:
 	poetry run alembic revision --autogenerate -m "$$message"
 
 # Reset databases (use with caution!)
-reset-local:
-	@echo "WARNING: This will reset the local development database. All data will be lost!"
-	@read -p "Are you sure? (y/N): " confirm; \
-	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		ENV_FILE=.env.local poetry run alembic downgrade base; \
-		ENV_FILE=.env.local poetry run alembic upgrade head; \
-		echo "Local database reset complete."; \
-	else \
-		echo "Operation cancelled."; \
-	fi
-
 reset-dev:
 	@echo "WARNING: This will reset the development database. All data will be lost!"
 	@read -p "Are you sure? (y/N): " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		ENV_FILE=.env poetry run alembic downgrade base; \
-		ENV_FILE=.env poetry run alembic upgrade head; \
-		echo "Development database reset complete."; \
-	else \
-		echo "Operation cancelled."; \
+		ENV_FILE=.env.dev poetry run alembic downgrade base; \
+		ENV_FILE=.env.dev poetry run alembic upgrade head; \
 	fi
 
-reset-docker:
-	@echo "WARNING: This will reset the docker database. All data will be lost!"
+reset-staging:
+	@echo "WARNING: This will reset the staging database. All data will be lost!"
 	@read -p "Are you sure? (y/N): " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
-		ENV_FILE=.env.docker poetry run alembic downgrade base; \
-		ENV_FILE=.env.docker poetry run alembic upgrade head; \
-		echo "Docker database reset complete."; \
-	else \
-		echo "Operation cancelled."; \
+		ENV_FILE=.env.staging poetry run alembic downgrade base; \
+		ENV_FILE=.env.staging poetry run alembic upgrade head; \
 	fi
 
 reset-prod:
@@ -81,12 +69,9 @@ reset-prod:
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
 		ENV_FILE=.env.production poetry run alembic downgrade base; \
 		ENV_FILE=.env.production poetry run alembic upgrade head; \
-		echo "Production database reset complete."; \
-	else \
-		echo "Operation cancelled."; \
 	fi
 
-# Code quality
+# Development tools
 lint:
 	poetry run flake8 app tests
 	poetry run mypy app tests
@@ -95,14 +80,11 @@ format:
 	poetry run black app tests
 	poetry run isort app tests
 
-# Tests
 test:
-	poetry run pytest -v tests 
+	poetry run pytest tests
 
-# Diagrams
 diagrams:
-	@echo "Generating PlantUML diagrams..."
-	./scripts/generate_diagrams.sh
+	poetry run python scripts/generate_diagrams.py
 
 check-plantuml:
 	@echo "Checking if PlantUML is installed..."
@@ -113,4 +95,7 @@ check-plantuml:
 		exit 1; \
 	else \
 		echo "PlantUML is installed."; \
-	fi 
+	fi
+
+# Ensure port is an integer
+port = int(port) 

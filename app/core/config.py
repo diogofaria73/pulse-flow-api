@@ -72,14 +72,23 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
-    POSTGRES_PORT: str = "5432"
+    POSTGRES_PORT: int = 5432
 
     # JWT Settings
     SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-for-development-only")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
+    # Environment
+    ENVIRONMENT: str = "dev"
+
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
+
+    @field_validator("POSTGRES_PORT", mode="before")
+    def validate_port(cls, v: Any) -> int:
+        if isinstance(v, str):
+            return int(v)
+        return v
 
     @field_validator("SQLALCHEMY_DATABASE_URI", mode="before")
     def assemble_db_connection(cls, v: Optional[str], values: Dict[str, Any]) -> Any:
@@ -89,28 +98,31 @@ class Settings(BaseSettings):
         server = values.data.get("POSTGRES_SERVER")
 
         # Automatically adjust the host if running outside docker but DB is inside
-        if not is_docker() and server in ["db_dev", "db_docker", "db_production"]:
+        if not is_docker() and server in ["db_dev", "db_staging", "db_production"]:
             server = "localhost"
 
         # Get the correct port when running locally
-        port = values.data.get("POSTGRES_PORT", "5432")
+        port = values.data.get("POSTGRES_PORT", 5432)
         if not is_docker():
             # Map the Docker service names to their exposed ports
             port_mappings = {
-                "db_dev": "5435",  # Mapped in docker-compose.yml
-                "db_docker": "5433",  # Mapped in docker-compose.yml
-                "db_production": "5434",  # Mapped in docker-compose.yml
+                "db_dev": 5432,      # Development database
+                "db_staging": 5433,  # Staging database
+                "db_production": 5434,  # Production database
             }
 
             if values.data.get("POSTGRES_SERVER") in port_mappings:
                 port = port_mappings[values.data.get("POSTGRES_SERVER")]
+
+        # Ensure port is an integer
+        port = int(port)
 
         return PostgresDsn.build(
             scheme="postgresql+psycopg2",
             username=values.data.get("POSTGRES_USER"),
             password=values.data.get("POSTGRES_PASSWORD"),
             host=server,
-            port=int(port),
+            port=port,
             path=f"{values.data.get('POSTGRES_DB') or ''}",
         )
 
