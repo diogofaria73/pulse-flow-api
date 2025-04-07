@@ -7,17 +7,17 @@ from pydantic import BaseModel
 class SectorBase(BaseModel):
     name: str
     description: Optional[str] = None
-    is_active: bool
+    is_active: bool = True
 
 
 class SectorCreate(SectorBase):
-    id: Optional[int] = None
-    created_at: Optional[datetime] = None
+    pass
 
 
-class SectorUpdate(SectorBase):
-    id: Optional[int] = None
-    updated_at: Optional[datetime] = None
+class SectorUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class SectorResponse(SectorBase):
@@ -25,8 +25,11 @@ class SectorResponse(SectorBase):
     created_at: datetime
     updated_at: datetime
 
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class SectorSearch(BaseModel):
+    id: Optional[int] = None
     name: Optional[str] = None
-    description: Optional[str] = None
-    is_active: Optional[bool] = None

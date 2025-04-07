@@ -1,12 +1,15 @@
-from sqlalchemy import Column, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.sql import func
 
-from app.db.base import Base
+from app.db.session import Base
 
 
 class Sector(Base):
     __tablename__ = "sectors"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=True)
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
