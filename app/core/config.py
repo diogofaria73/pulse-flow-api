@@ -1,6 +1,7 @@
 import os
 import socket
 from typing import Any, Dict, Optional
+from datetime import timedelta
 
 from pydantic import PostgresDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -72,6 +73,11 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB: str
     POSTGRES_PORT: str = "5432"
+    
+    # JWT Settings
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "your-secret-key-for-development-only")
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
 

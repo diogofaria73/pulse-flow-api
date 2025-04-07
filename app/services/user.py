@@ -1,16 +1,11 @@
 from typing import List, Optional
-import hashlib
 
 from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.repositories.user import user_repository
 from app.schemas.user import UserCreate, UserSearch, UserUpdate
-
-
-def hash_password(password: str) -> str:
-    """Simple password hashing using SHA-256. In production, use more secure methods."""
-    return hashlib.sha256(password.encode()).hexdigest()
+from app.core.security import get_password_hash, verify_password
 
 
 class UserService:
@@ -21,7 +16,7 @@ class UserService:
             raise ValueError(f"Email {user_in.email} already registered")
         
         # Hash the password
-        hashed_password = hash_password(user_in.password)
+        hashed_password = get_password_hash(user_in.password)
         user_data = user_in.model_dump()
         user_data["password"] = hashed_password
         
@@ -30,6 +25,17 @@ class UserService:
     
     def get_user(self, db: Session, user_id: int) -> Optional[User]:
         return user_repository.get(db, id=user_id)
+    
+    def get_user_by_email(self, db: Session, email: str) -> Optional[User]:
+        return user_repository.get_by_email(db, email=email)
+    
+    def authenticate_user(self, db: Session, email: str, password: str) -> Optional[User]:
+        user = self.get_user_by_email(db, email=email)
+        if not user:
+            return None
+        if not verify_password(password, user.password):
+            return None
+        return user
     
     def get_all_users(self, db: Session) -> List[User]:
         return user_repository.get_all(db)
@@ -48,7 +54,7 @@ class UserService:
         # Hash password if provided
         update_data = user_in.model_dump(exclude_unset=True)
         if "password" in update_data and update_data["password"]:
-            update_data["password"] = hash_password(update_data["password"])
+            update_data["password"] = get_password_hash(update_data["password"])
         
         return user_repository.update(db, db_obj=user, obj_in=update_data)
     

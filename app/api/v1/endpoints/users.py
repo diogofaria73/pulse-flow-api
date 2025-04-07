@@ -1,8 +1,9 @@
-from typing import List
+from typing import List, Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_current_active_user
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserSearch, UserUpdate
@@ -15,6 +16,7 @@ router = APIRouter()
 def create_user(
     user_in: UserCreate,
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Create a new user."""
     try:
@@ -29,6 +31,7 @@ def create_user(
 @router.get("/all", response_model=List[UserResponse])
 def get_all_users(
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Get all users."""
     users = user_service.get_all_users(db)
@@ -44,7 +47,7 @@ def get_user(
     user_id: int,
     db: Session = Depends(get_db),
 ):
-    """Get a user by ID."""
+    """Get a user by ID. This endpoint is not protected."""
     user = user_service.get_user(db, user_id)
     if user is None:
         raise HTTPException(
@@ -58,6 +61,7 @@ def update_user(
     user_id: int,
     user_in: UserUpdate,
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Update a user."""
     user = user_service.update_user(db, user_id, user_in)
@@ -72,6 +76,7 @@ def update_user(
 def search_users(
     search_params: UserSearch,
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Search for users by ID, name, or email."""
     users = user_service.search_users(db, search_params)
@@ -81,6 +86,7 @@ def search_users(
 def activate_user(
     user_id: int,
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Activate a user."""
     user = user_service.activate_deactivate_user(db, user_id, True)
@@ -95,6 +101,7 @@ def activate_user(
 def deactivate_user(
     user_id: int,
     db: Session = Depends(get_db),
+    current_user: Annotated[User, Depends(get_current_active_user)] = None,
 ):
     """Deactivate a user."""
     user = user_service.activate_deactivate_user(db, user_id, False)
