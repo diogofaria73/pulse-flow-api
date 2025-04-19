@@ -39,29 +39,45 @@ pulse-flow-api/
 
 ## Execution Environments
 
-The API supports three distinct execution environments:
+A API suporta três cenários de execução distintos:
 
-1. **Development** - For local development and testing
-   - API runs on port 8000
-   - Database runs on port 5432
-   - Automatic code reloading enabled
-   - Debug mode enabled
+### Cenário 1: Desenvolvimento Local
+- **API:** Executa localmente na máquina do desenvolvedor
+- **Banco de Dados:** Executa no Docker
+- **Arquivo de Configuração:** `.env.local`
+- **Comando:** `make local`
+- **Porta API:** 8000
+- **Porta DB:** 5432
+- **Características:** 
+  - Reload automático ao editar o código
+  - Modo de debug ativado
+  - DB acessível em localhost:5432
 
-2. **Staging** - For pre-production testing
-   - API runs on port 8001
-   - Database runs on port 5433
-   - Debug mode disabled
-   - Production-like settings
+### Cenário 2: Ambiente de Staging (Homologação)
+- **API:** Executa no Docker
+- **Banco de Dados:** Executa no Docker
+- **Arquivo de Configuração:** `.env.staging`
+- **Comando:** `make staging`
+- **Porta API:** 8001
+- **Porta DB:** 5433 (host) / 5432 (interno)
+- **Características:**
+  - Simula o ambiente de produção
+  - Ideal para testes de integração e homologação
 
-3. **Production** - For live deployment
-   - API runs on port 8002
-   - Database runs on port 5434
-   - Debug mode disabled
-   - Optimized for performance
+### Cenário 3: Ambiente de Produção
+- **API:** Executa no Docker
+- **Banco de Dados:** Executa no Docker
+- **Arquivo de Configuração:** `.env.production`
+- **Comando:** `make prod`
+- **Porta API:** 8002
+- **Porta DB:** 5434 (host) / 5432 (interno)
+- **Características:**
+  - Otimizado para desempenho
+  - Modo de debug desativado
 
-### Environment Detection
+### Detecção de Ambiente
 
-The API automatically detects the environment where it's running and applies the correct settings based on the `ENVIRONMENT` variable in the respective `.env` file.
+A API detecta automaticamente o ambiente de execução através da variável `ENVIRONMENT` nos arquivos `.env` e aplica as configurações apropriadas.
 
 ## Getting Started
 
@@ -69,77 +85,94 @@ The API automatically detects the environment where it's running and applies the
 
 - Python 3.9+
 - Poetry
-- Docker and Docker Compose
-- PostgreSQL (for local development)
+- Docker e Docker Compose
+- PostgreSQL (para conexão local)
 
 ### Installation
 
-1. Clone the repository:
+1. Clone o repositório:
 ```bash
 git clone https://github.com/yourusername/pulse-flow-api.git
 cd pulse-flow-api
 ```
 
-2. Install dependencies:
+2. Instale as dependências:
 ```bash
 poetry install
 ```
 
-3. Copy the environment template:
+3. Copie os templates de ambiente:
 ```bash
-cp .env.example .env.dev  # For development
-cp .env.example .env.staging  # For staging
-cp .env.example .env.production  # For production
+cp .env.example .env.local
+cp .env.example .env.staging
+cp .env.example .env.production
 ```
 
-4. Update the environment variables in each `.env` file as needed.
+4. Atualize as variáveis de ambiente em cada arquivo `.env` conforme necessário.
 
 ### Running the Application
 
-#### Full Environment (API + Database)
+#### Desenvolvimento Local (API Local + DB no Docker)
 
 ```bash
-make dev      # For development
-make staging  # For staging
-make prod     # For production
+make local
 ```
 
-#### Infrastructure Only (Database)
-
-If you only need the database infrastructure:
+#### Ambiente de Staging (API + DB no Docker)
 
 ```bash
-make infra-dev      # Start development database
-make infra-staging  # Start staging database
-make infra-prod     # Start production database
+make staging
 ```
 
-The databases will be available on the following ports:
-- Development: 5432
+#### Ambiente de Produção (API + DB no Docker)
+
+```bash
+make prod
+```
+
+#### Somente Infraestrutura (Banco de Dados)
+
+Se você precisa apenas do banco de dados:
+
+```bash
+make infra-dev     # Inicia o banco de dados de desenvolvimento
+make infra-staging # Inicia o banco de dados de staging
+make infra-prod    # Inicia o banco de dados de produção
+```
+
+Os bancos de dados estarão disponíveis nas seguintes portas:
+- Desenvolvimento: 5432
 - Staging: 5433
-- Production: 5434
+- Produção: 5434
 
 ### Database Migrations
 
-To run migrations in each environment:
+Para rodar migrações em cada ambiente:
 
 ```bash
-make migrate-dev      # For development
-make migrate-staging  # For staging
-make migrate-prod     # For production
+make migrate-local    # Para desenvolvimento local
+make migrate-staging  # Para ambiente de staging
+make migrate-prod     # Para ambiente de produção
 ```
 
-To generate a new migration:
+Para gerar uma nova migração:
 ```bash
 make generate-migration
 ```
 
+Para resetar o banco de dados (use com cuidado, isso apaga todos os dados):
+```bash
+make reset-local    # Para ambiente de desenvolvimento
+make reset-staging  # Para ambiente de staging
+make reset-prod     # Para ambiente de produção
+```
+
 ### Development Tools
 
-- Run tests: `make test`
-- Format code: `make format`
-- Run linter: `make lint`
-- Generate diagrams: `make diagrams`
+- Executar testes: `make test`
+- Formatar código: `make format`
+- Executar linter: `make lint`
+- Gerar diagramas: `make diagrams`
 
 ## API Documentation
 
@@ -159,3 +192,39 @@ Once the application is running, you can access the API documentation at:
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Migrações de Banco de Dados
+
+As migrações de banco de dados estão centralizadas no diretório `app/infrastructure/migrations`. 
+
+### Migração para a nova estrutura
+
+Se você está migrando de uma instalação anterior que usava o diretório `migrations/` na raiz, execute o script de migração para atualizar:
+
+```bash
+./scripts/migrate-to-infrastructure.sh
+```
+
+Este script vai:
+1. Fazer backup do schema atual
+2. Transferir os arquivos de migração para a nova estrutura
+3. Atualizar a tabela `alembic_version` no banco de dados
+
+### Comandos de migração
+
+Para executar migrações, use os comandos do Makefile:
+
+```bash
+# Gerar uma nova migração (após mudanças nos modelos)
+make generate-migration
+
+# Aplicar migrações
+make migrate-dev  # para ambiente de desenvolvimento
+make migrate-staging  # para ambiente de staging
+make migrate-prod  # para ambiente de produção
+
+# Resetar o banco de dados (use com cuidado!)
+make reset-dev  # para ambiente de desenvolvimento
+```
+
+Todos os comandos agora apontam para o arquivo de configuração do Alembic em `app/infrastructure/alembic.ini`.

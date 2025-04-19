@@ -2,10 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import api_router
-from app.core.config import settings
+from app.infrastructure.core.config import settings
 
 # No longer creating tables directly - use Alembic for migrations instead
-# from app.db.session import Base, engine
+# from app.infrastructure.db.session import Base, engine
 # Base.metadata.create_all(bind=engine)
 
 app = FastAPI(

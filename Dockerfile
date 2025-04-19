@@ -33,7 +33,6 @@ EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV ENVIRONMENT=docker
 
 # Command to run the application
 CMD ["/app/scripts/start.sh"]

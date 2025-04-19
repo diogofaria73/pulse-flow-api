@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Development environment
+  # Cenário 1: Banco de dados para desenvolvimento local
   db_dev:
     image: postgres:14
     container_name: pulse_flow_db_dev
@@ -38,7 +38,7 @@ services:
     networks:
       - pulse_flow_network
 
-  # Staging environment
+  # Cenário 2: Ambiente de Staging (API + DB no Docker)
   db_staging:
     image: postgres:14
     container_name: pulse_flow_db_staging
@@ -67,6 +67,7 @@ services:
     restart: always
     environment:
       - ENV_FILE=.env.staging
+      - ENVIRONMENT=staging
     ports:
       - "8001:8000"
     depends_on:
@@ -75,7 +76,7 @@ services:
     networks:
       - pulse_flow_network
 
-  # Production environment
+  # Cenário 3: Ambiente de Produção (API + DB no Docker)
   db_production:
     image: postgres:14
     container_name: pulse_flow_db_production
@@ -104,6 +105,7 @@ services:
     restart: always
     environment:
       - ENV_FILE=.env.production
+      - ENVIRONMENT=production
     ports:
       - "8002:8000"
     depends_on:

@@ -56,7 +56,7 @@ ENV/
 # Environment files (only keep example files in git)
 .env
 .env.local
-.env.docker
+.env.staging
 .env.production
 !.env.example
 
@@ -76,6 +76,7 @@ postgres-data/
 
 # Alembic migration temp files
 migrations/versions/__pycache__/
+app/infrastructure/migrations/versions/__pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints

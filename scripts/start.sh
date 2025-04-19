@@ -20,15 +20,13 @@ detect_environment() {
 ENV=$(detect_environment)
 echo "Running in environment: $ENV"
 
-# Selecionar arquivo .env apropriado
+# Selecionar arquivo .env apropriado com base no ENVIRONMENT
 if [ "$ENV" = "production" ]; then
   export ENV_FILE=.env.production
-elif [ "$ENV" = "docker" ]; then
-  export ENV_FILE=.env.docker
-elif [ "$ENV" = "local" ]; then
-  export ENV_FILE=.env.local
+elif [ "$ENV" = "staging" ]; then
+  export ENV_FILE=.env.staging
 else
-  export ENV_FILE=.env
+  export ENV_FILE=.env.local
 fi
 
 echo "Using environment file: $ENV_FILE"
@@ -40,7 +38,7 @@ function check_db_connection() {
 import sys
 import time
 import psycopg2
-from app.core.config import settings
+from app.infrastructure.core.config import settings
 
 # Try to connect to the database
 retries = 5
@@ -48,11 +46,11 @@ retry_interval = 5
 for i in range(retries):
     try:
         conn = psycopg2.connect(
-            host=settings.SQLALCHEMY_DATABASE_URI.host,
-            port=settings.SQLALCHEMY_DATABASE_URI.port,
-            user=settings.SQLALCHEMY_DATABASE_URI.username,
-            password=settings.SQLALCHEMY_DATABASE_URI.password,
-            dbname=settings.SQLALCHEMY_DATABASE_URI.path.lstrip('/')
+            host=settings.POSTGRES_SERVER,
+            port=settings.POSTGRES_PORT,
+            user=settings.POSTGRES_USER,
+            password=settings.POSTGRES_PASSWORD,
+            dbname=settings.POSTGRES_DB
         )
         conn.close()
         print('Successfully connected to the database!')
@@ -73,7 +71,7 @@ check_db_connection
 
 # Aplicar migrações
 echo "Running database migrations..."
-alembic upgrade head
+alembic -c app/infrastructure/alembic.ini upgrade head
 
 # Iniciar aplicação
 echo "Starting application..."
